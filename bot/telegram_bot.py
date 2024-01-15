@@ -44,6 +44,8 @@ class ChatGPTTelegramBot:
             BotCommand(command='stats', description=localized_text('stats_description', bot_language)),
             BotCommand(command='resend', description=localized_text('resend_description', bot_language))
         ]
+
+
         # If imaging is enabled, add the "image" command to the list
         # if self.config.get('enable_image_generation', False):
         #     self.commands.append(BotCommand(command='image', description=localized_text('image_description', bot_language)))
@@ -61,6 +63,9 @@ class ChatGPTTelegramBot:
         self.inline_queries_cache = {}
 
     async def help(self, update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
+        print("help")
+        print(update.effective_user.language_code)
+
         """
         Shows the help menu.
         """
@@ -68,15 +73,15 @@ class ChatGPTTelegramBot:
         commands_description = [f'/{command.command} - {command.description}' for command in commands]
         bot_language = self.config['bot_language']
         help_text = (
-                localized_text('help_text', bot_language)[0] +
+                localized_text('help_text', update.effective_user.language_code)[0] +
                 '\n\n' +
                 '\n'.join(commands_description) +
                 '\n\n' +
-                localized_text('help_text', bot_language)[1] +
+                localized_text('help_text', update.effective_user.language_code)[1] +
                 '\n\n' +
-                localized_text('help_text', bot_language)[2]
+                localized_text('help_text', update.effective_user.language_code)[2]
         )
-        print(help_text)
+        print("help \n\n\n",help_text)
         await update.message.reply_text(help_text, disable_web_page_preview=True)
 
     async def stats(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -456,6 +461,7 @@ class ChatGPTTelegramBot:
         await wrap_with_indicator(update, context, _execute, constants.ChatAction.TYPING)
 
     async def vision(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+
         """
         Interpret image using vision model.
         """

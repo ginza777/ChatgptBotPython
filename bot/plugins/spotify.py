@@ -12,9 +12,9 @@ class SpotifyPlugin(Plugin):
     A plugin to fetch information from Spotify
     """
     def __init__(self):
-        spotify_client_id = os.getenv('SPOTIFY_CLIENT_ID')
-        spotify_client_secret = os.getenv('SPOTIFY_CLIENT_SECRET')
-        spotify_redirect_uri = os.getenv('SPOTIFY_REDIRECT_URI')
+        spotify_client_id = "51752a9e9f434e738722723f3537df84"
+        spotify_client_secret = "be5e5dd1760343f3ba78236f0ebdf26e"
+        spotify_redirect_uri = "https://c555-213-230-112-61.ngrok-free.app"
         if not spotify_client_id or not spotify_client_secret or not spotify_redirect_uri:
             raise ValueError('SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET and SPOTIFY_REDIRECT_URI environment variables'
                              ' are required to use SpotifyPlugin')
