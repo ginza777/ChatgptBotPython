@@ -45,8 +45,8 @@ class ChatGPTTelegramBot:
             BotCommand(command='resend', description=localized_text('resend_description', bot_language))
         ]
         # If imaging is enabled, add the "image" command to the list
-        if self.config.get('enable_image_generation', False):
-            self.commands.append(BotCommand(command='image', description=localized_text('image_description', bot_language)))
+        # if self.config.get('enable_image_generation', False):
+        #     self.commands.append(BotCommand(command='image', description=localized_text('image_description', bot_language)))
 
         if self.config.get('enable_tts_generation', False):
             self.commands.append(BotCommand(command='tts', description=localized_text('tts_description', bot_language)))
@@ -76,6 +76,7 @@ class ChatGPTTelegramBot:
                 '\n\n' +
                 localized_text('help_text', bot_language)[2]
         )
+        print(help_text)
         await update.message.reply_text(help_text, disable_web_page_preview=True)
 
     async def stats(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -237,9 +238,9 @@ class ChatGPTTelegramBot:
         """
         Generates an image for the given prompt using DALL·E APIs
         """
-        if not self.config['enable_image_generation'] \
-                or not await self.check_allowed_and_within_budget(update, context):
-            return
+        # if not self.config['enable_image_generation'] \
+        #         or not await self.check_allowed_and_within_budget(update, context):
+        #     return
 
         image_query = message_text(update.message)
         if image_query == '':
@@ -289,9 +290,9 @@ class ChatGPTTelegramBot:
         """
         Generates an speech for the given input using TTS APIs
         """
-        if not self.config['enable_tts_generation'] \
-                or not await self.check_allowed_and_within_budget(update, context):
-            return
+        # if not self.config['enable_tts_generation'] \
+        #         or not await self.check_allowed_and_within_budget(update, context):
+        #     return
 
         tts_query = message_text(update.message)
         if tts_query == '':
@@ -332,18 +333,20 @@ class ChatGPTTelegramBot:
         await wrap_with_indicator(update, context, _generate, constants.ChatAction.UPLOAD_VOICE)
 
     async def transcribe(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        print("transcribe")
         """
         Transcribe audio messages.
         """
-        if not self.config['enable_transcription'] or not await self.check_allowed_and_within_budget(update, context):
-            return
+        # if not self.config['enable_transcription'] or not await self.check_allowed_and_within_budget(update, context):
+        #     return
 
-        if is_group_chat(update) and self.config['ignore_group_transcriptions']:
-            logging.info(f'Transcription coming from group chat, ignoring...')
-            return
+        # if is_group_chat(update) and self.config['ignore_group_transcriptions']:
+        #     logging.info(f'Transcription coming from group chat, ignoring...')
+        #     return
 
         chat_id = update.effective_chat.id
         filename = update.message.effective_attachment.file_unique_id
+        print(filename)
 
         async def _execute():
             filename_mp3 = f'{filename}.mp3'
@@ -366,6 +369,7 @@ class ChatGPTTelegramBot:
 
             try:
                 audio_track = AudioSegment.from_file(filename)
+                print("\n\naudio_track", audio_track)
                 audio_track.export(filename_mp3, format="mp3")
                 logging.info(f'New transcribe request received from user {update.message.from_user.name} '
                              f'(id: {update.message.from_user.id})')
@@ -455,8 +459,8 @@ class ChatGPTTelegramBot:
         """
         Interpret image using vision model.
         """
-        if not self.config['enable_vision'] or not await self.check_allowed_and_within_budget(update, context):
-            return
+        # if not self.config['enable_vision'] or not await self.check_allowed_and_within_budget(update, context):
+        #     return
 
         chat_id = update.effective_chat.id
         prompt = update.message.caption
@@ -471,9 +475,9 @@ class ChatGPTTelegramBot:
                    (prompt is not None and not prompt.lower().startswith(trigger_keyword.lower())):
                     logging.info(f'Vision coming from group chat with wrong keyword, ignoring...')
                     return
-        
+
         image = update.message.effective_attachment[-1]
-        
+
 
         async def _execute():
             bot_language = self.config['bot_language']
@@ -492,14 +496,14 @@ class ChatGPTTelegramBot:
                     parse_mode=constants.ParseMode.MARKDOWN
                 )
                 return
-            
+
             # convert jpg from telegram to png as understood by openai
 
             temp_file_png = io.BytesIO()
 
             try:
                 original_image = Image.open(temp_file)
-                
+
                 original_image.save(temp_file_png, format='PNG')
                 logging.info(f'New vision request received from user {update.message.from_user.name} '
                              f'(id: {update.message.from_user.id})')
@@ -511,8 +515,8 @@ class ChatGPTTelegramBot:
                     reply_to_message_id=get_reply_to_message_id(self.config, update),
                     text=localized_text('media_type_fail', bot_language)
                 )
-            
-            
+
+
 
             user_id = update.message.from_user.id
             if user_id not in self.usage:
@@ -597,7 +601,7 @@ class ChatGPTTelegramBot:
                     if tokens != 'not_finished':
                         total_tokens = int(tokens)
 
-                
+
             else:
 
                 try:
@@ -650,8 +654,8 @@ class ChatGPTTelegramBot:
         if update.edited_message or not update.message or update.message.via_bot:
             return
 
-        if not await self.check_allowed_and_within_budget(update, context):
-            return
+        # if not await self.check_allowed_and_within_budget(update, context):
+        #     return
 
         logging.info(
             f'New message received from user {update.message.from_user.name} (id: {update.message.from_user.id})')
@@ -686,7 +690,7 @@ class ChatGPTTelegramBot:
                     action=constants.ChatAction.TYPING,
                     message_thread_id=get_thread_id(update)
                 )
-
+                print("streaming","query:",prompt)
                 stream_response = self.openai.get_chat_response_stream(chat_id=chat_id, query=prompt)
                 i = 0
                 prev = ''
@@ -815,8 +819,8 @@ class ChatGPTTelegramBot:
         query = update.inline_query.query
         if len(query) < 3:
             return
-        if not await self.check_allowed_and_within_budget(update, context, is_inline=True):
-            return
+        # if not await self.check_allowed_and_within_budget(update, context, is_inline=True):
+        #     return
 
         callback_data_suffix = "gpt:"
         result_id = str(uuid4())
@@ -987,55 +991,55 @@ class ChatGPTTelegramBot:
                                           text=f"{query}\n\n_{answer_tr}:_\n{localized_answer} {str(e)}",
                                           is_inline=True)
 
-    async def check_allowed_and_within_budget(self, update: Update, context: ContextTypes.DEFAULT_TYPE,
-                                              is_inline=False) -> bool:
-        """
-        Checks if the user is allowed to use the bot and if they are within their budget
-        :param update: Telegram update object
-        :param context: Telegram context object
-        :param is_inline: Boolean flag for inline queries
-        :return: Boolean indicating if the user is allowed to use the bot
-        """
-        name = update.inline_query.from_user.name if is_inline else update.message.from_user.name
-        user_id = update.inline_query.from_user.id if is_inline else update.message.from_user.id
+    # async def check_allowed_and_within_budget(self, update: Update, context: ContextTypes.DEFAULT_TYPE,
+    #                                           is_inline=False) -> bool:
+    #     """
+    #     Checks if the user is allowed to use the bot and if they are within their budget
+    #     :param update: Telegram update object
+    #     :param context: Telegram context object
+    #     :param is_inline: Boolean flag for inline queries
+    #     :return: Boolean indicating if the user is allowed to use the bot
+    #     """
+    #     name = update.inline_query.from_user.name if is_inline else update.message.from_user.name
+    #     user_id = update.inline_query.from_user.id if is_inline else update.message.from_user.id
+    #
+    #     if not await is_allowed(self.config, update, context, is_inline=is_inline):
+    #         logging.warning(f'User {name} (id: {user_id}) is not allowed to use the bot')
+    #         await self.send_disallowed_message(update, context, is_inline)
+    #         return False
+    #     if not is_within_budget(self.config, self.usage, update, is_inline=is_inline):
+    #         logging.warning(f'User {name} (id: {user_id}) reached their usage limit')
+    #         await self.send_budget_reached_message(update, context, is_inline)
+    #         return False
+    #
+    #     return True
 
-        if not await is_allowed(self.config, update, context, is_inline=is_inline):
-            logging.warning(f'User {name} (id: {user_id}) is not allowed to use the bot')
-            await self.send_disallowed_message(update, context, is_inline)
-            return False
-        if not is_within_budget(self.config, self.usage, update, is_inline=is_inline):
-            logging.warning(f'User {name} (id: {user_id}) reached their usage limit')
-            await self.send_budget_reached_message(update, context, is_inline)
-            return False
+    # async def send_disallowed_message(self, update: Update, _: ContextTypes.DEFAULT_TYPE, is_inline=False):
+    #     """
+    #     Sends the disallowed message to the user.
+    #     """
+    #     if not is_inline:
+    #         await update.effective_message.reply_text(
+    #             message_thread_id=get_thread_id(update),
+    #             text=self.disallowed_message,
+    #             disable_web_page_preview=True
+    #         )
+    #     else:
+    #         result_id = str(uuid4())
+    #         await self.send_inline_query_result(update, result_id, message_content=self.disallowed_message)
 
-        return True
-
-    async def send_disallowed_message(self, update: Update, _: ContextTypes.DEFAULT_TYPE, is_inline=False):
-        """
-        Sends the disallowed message to the user.
-        """
-        if not is_inline:
-            await update.effective_message.reply_text(
-                message_thread_id=get_thread_id(update),
-                text=self.disallowed_message,
-                disable_web_page_preview=True
-            )
-        else:
-            result_id = str(uuid4())
-            await self.send_inline_query_result(update, result_id, message_content=self.disallowed_message)
-
-    async def send_budget_reached_message(self, update: Update, _: ContextTypes.DEFAULT_TYPE, is_inline=False):
-        """
-        Sends the budget reached message to the user.
-        """
-        if not is_inline:
-            await update.effective_message.reply_text(
-                message_thread_id=get_thread_id(update),
-                text=self.budget_limit_message
-            )
-        else:
-            result_id = str(uuid4())
-            await self.send_inline_query_result(update, result_id, message_content=self.budget_limit_message)
+    # async def send_budget_reached_message(self, update: Update, _: ContextTypes.DEFAULT_TYPE, is_inline=False):
+    #     """
+    #     Sends the budget reached message to the user.
+    #     """
+    #     if not is_inline:
+    #         await update.effective_message.reply_text(
+    #             message_thread_id=get_thread_id(update),
+    #             text=self.budget_limit_message
+    #         )
+    #     else:
+    #         result_id = str(uuid4())
+    #         await self.send_inline_query_result(update, result_id, message_content=self.budget_limit_message)
 
     async def post_init(self, application: Application) -> None:
         """
@@ -1058,7 +1062,6 @@ class ChatGPTTelegramBot:
 
         application.add_handler(CommandHandler('reset', self.reset))
         application.add_handler(CommandHandler('help', self.help))
-        application.add_handler(CommandHandler('image', self.image))
         application.add_handler(CommandHandler('tts', self.tts))
         application.add_handler(CommandHandler('start', self.help))
         application.add_handler(CommandHandler('stats', self.stats))
